@@ -214,7 +214,9 @@
         if (centro != null)
         {
             ViewModel.CentroSeleccionado = centro;
-            Nav.NavigateTo("/detalles");
+           // Nav.NavigateTo("/detalles");
+            Nav.NavigateTo($"/detalles/{centro.CCEN}");
+            //<button @onclick="() => Nav.NavigateTo($"/centros/{c.Id}")">
         }
     }
 }

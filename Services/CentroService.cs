@@ -46,6 +46,48 @@ namespace ElorMAUI.Services
                 return new List<Centro>();
             }
         }
+
+
+        public async Task<Centro> ObtenerCentroAsync(int ccen)
+        {
+            var centros = await this.ObtenerCentrosAsync();
+            var centro = centros.Where(c => c.CCEN == ccen).Single();
+            /*
+            try
+            {
+                // 1. Abrir y leer el archivo
+                using var stream = await FileSystem.OpenAppPackageFileAsync("jsonReto2.txt");
+                using var reader = new StreamReader(stream);
+                var contents = await reader.ReadToEndAsync();
+
+                if (string.IsNullOrWhiteSpace(contents)) return new List<Centro>();
+
+                // 2. Configurar opciones (insensible a mayúsculas para evitar fallos)
+                var opciones = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true,
+
+                    NumberHandling = JsonNumberHandling.AllowReadingFromString | JsonNumberHandling.WriteAsString
+                };
+
+                // 3. SERIALIZACIÓN CLAVE:
+                // En lugar de deserializar una List, deserializamos el OBJETO que contiene la lista
+                var respuesta = JsonSerializer.Deserialize<CentroResponse>(contents, opciones);
+
+                // Devolvemos la lista que está dentro de la propiedad CENTROS
+                var centro = 
+                // return respuesta?.CENTROS ?? new List<Centro>();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error de serialización: {ex.Message}");
+                return new Centro();
+            }
+            return this._cacheCentros.Where(c => c.CCEN == ccen).Single();*/
+            return centro;
+        
+        }
+
     }
 }
  

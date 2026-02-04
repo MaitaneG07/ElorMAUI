@@ -2,7 +2,10 @@
 {
     public class Centro
     {
+
+        public int? CCEN { get; set; }//no existia
         public string? NOM { get; set; }
+
         public string? DMUNIC { get; set; } // Municipio
         public string? DTERRC { get; set; } // Territorio/Provincia
         public string? DTITUC { get; set; } // Titularidad

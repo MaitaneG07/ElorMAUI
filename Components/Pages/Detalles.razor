@@ -1,18 +1,23 @@
-﻿@page "/detalles"
-<!--page "/detalles"-->
+﻿@page "/detalles/{CCEN:int}"
+<!--page "/centros/{CentroId:int}"-->
 @using ElorMAUI.Services
 @using ElorMAUI.ViewModels
+@using ElorMAUI.Models
 @inject WeatherService ClimaService
+@inject CentroService CentroService
 @inject MainViewModel ViewModel
 @inject IJSRuntime JSRuntime
 
 <div class="container mt-3">
     <h3 class="mb-4 text-primary text-center">📍 Detalles del Centro</h3>
 
+    centro
     @* Información del Centro *@
-    @if (ViewModel.CentroSeleccionado != null)
+    @if (centro != null)
+       // @if (ViewModel.CentroSeleccionado != null)
     {
-        var centro = ViewModel.CentroSeleccionado;
+        //<h1>si hay centro seleccionado</h1>
+        //var centro = ViewModel.CentroSeleccionado;
 
         <div class="card mb-4 shadow-sm">
             <div class="card-header bg-primary text-white">
@@ -33,6 +38,9 @@
                 </div>
             </div>
         </div>
+    }else
+    {
+        <h1>no hay centro seleccionado</h1>
     }
 
     @* Clima *@
@@ -115,6 +123,17 @@
 </style>
 
 @code {
+    [Parameter] public int CCEN { get; set; }
+
+    Centro centro;
+
+   // [Inject] public CentroService CentroService { get; set; } = default!;
+
+   /* protected override async Task OnParametersSetAsync()
+    {
+        centro = await CentrosService.GetByIdAsync(CentroId);
+     }*/
+
     [SupplyParameterFromQuery(Name = "lat")]
     public double Lat { get; set; }
 
@@ -130,6 +149,7 @@
         try
         {
             datos = await ClimaService.GetWeatherAsync(Lat, Lon);
+            centro = await CentroService.ObtenerCentroAsync(CCEN);
         }
         catch
         {
