@@ -1,0 +1,220 @@
+﻿@page "/buscador"
+@using ElorMAUI.ViewModels
+@using ElorMAUI.Models
+@inject MainViewModel ViewModel
+@inject NavigationManager Nav
+
+<div class="container mt-3">
+    <h3 class="mb-4 text-primary text-center">🔍 Buscador de Centros Educativos</h3>
+
+    @if (cargando)
+    {
+        <div class="text-center mt-5">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p>Cargando datos de centros...</p>
+        </div>
+    }
+    else
+    {
+        <div class="card bg-light shadow-sm mb-4">
+            <div class="card-body">
+                <div class="row g-3">
+                    @* 1. TITULARIDAD *@
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Titularidad:</label>
+                        <select class="form-select" @onchange="OnTitularidadChanged">
+                            <option value="">Seleccione tipo...</option>
+                            @foreach (var t in ViewModel.ListaTitularidades)
+                            {
+                                <option value="@t">@t</option>
+                            }
+                        </select>
+                    </div>
+
+                    @* 2. TERRITORIO *@
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Territorio:</label>
+                        <select class="form-select" @onchange="OnTerritorioChanged">
+                            <option value="">Seleccione territorio...</option>
+                            @foreach (var ter in ViewModel.ListaTerritorios)
+                            {
+                                <option value="@ter">@ter</option>
+                            }
+                        </select>
+                    </div>
+
+                    @* 3. MUNICIPIO (NUEVO) *@
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Municipio:</label>
+                        <select class="form-select" @bind="municipioSeleccionado">
+                            <option value="">Todos los municipios...</option>
+                            @foreach (var muni in listaMunicipiosFiltrados)
+                            {
+                                <option value="@muni">@muni</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="col-12 d-flex justify-content-center mt-3">
+                        <button class="btn btn-primary px-5 shadow-sm" @onclick="EjecutarFiltro">
+                            <i class="bi bi-funnel"></i> Filtrar Resultados
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="d-flex justify-content-between mb-2">
+            <span class="badge bg-secondary">Resultados: @centrosFiltrados.Count</span>
+        </div>
+
+        <div class="table-responsive rounded shadow-sm">
+            <table class="table table-hover bg-white">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Nombre del Centro</th>
+                        <th>Municipio</th>
+                        <th class="text-center">Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var c in CentrosPaginados)
+                    {
+                        <tr>
+                            <td class="fw-bold">@c.NOM</td>
+                            <td>@c.DMUNIC</td>
+                            <td class="text-center">
+                                <button class="btn btn-sm btn-info text-white" @onclick="() => IrADetalle(c)">
+                                    Ver Ficha
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+            <div class="d-flex justify-content-between align-items-center bg-light p-3 border-top">
+                <div class="text-muted small">
+                    Mostrando página <strong>@paginaActual</strong> de <strong>@TotalPaginas</strong>
+                </div>
+                <nav>
+                    <ul class="pagination pagination-sm mb-0">
+
+                        <li class="page-item @(paginaActual <= 1 ? "disabled" : "")">
+                            <button class="page-link" @onclick="() => CambiarPagina(paginaActual - 1)">
+                                <i class="bi bi-chevron-left"></i> Anterior
+                            </button>
+                        </li>
+
+
+                        <li class="page-item active">
+                            <span class="page-link">@paginaActual</span>
+                        </li>
+
+
+                        <li class="page-item @(paginaActual >= TotalPaginas ? "disabled" : "")">
+                            <button class="page-link" @onclick="() => CambiarPagina(paginaActual + 1)">
+                                Siguiente <i class="bi bi-chevron-right"></i>
+                            </button>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Inject] private CentroService centroService { get; set; }
+
+    private bool cargando = true;
+    private string titularidadSeleccionada = "";
+    private string territorioSeleccionado = "";
+    private string municipioSeleccionado = "";
+    private int paginaActual = 1;
+    private int tamañoPagina = 10;
+
+    private List<Centro> listaCompleta = new List<Centro>();
+    private List<Centro> centrosFiltrados = new List<Centro>();
+    private List<string> listaMunicipiosFiltrados = new List<string>();
+
+    private List<Centro> CentrosPaginados => centrosFiltrados
+        .Skip((paginaActual - 1) * tamañoPagina)
+        .Take(tamañoPagina)
+        .ToList();
+
+    private int TotalPaginas => (int)Math.Ceiling((double)centrosFiltrados.Count / tamañoPagina);
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            cargando = true;
+            await ViewModel.CargarDatos();
+            listaCompleta = ViewModel.TodosLosCentros;
+            centrosFiltrados = ViewModel.CentrosFiltrados;
+        }
+        catch (Exception ex) { Console.WriteLine($"Error: {ex.Message}"); }
+        finally
+        {
+            cargando = false;
+            StateHasChanged();
+        }
+    }
+
+    private void OnTitularidadChanged(ChangeEventArgs e)
+    {
+        titularidadSeleccionada = e.Value?.ToString() ?? "";
+        territorioSeleccionado = "";
+        municipioSeleccionado = "";
+        listaMunicipiosFiltrados.Clear();
+        ViewModel.FiltrarTerritorios(titularidadSeleccionada);
+    }
+
+
+    private void OnTerritorioChanged(ChangeEventArgs e)
+    {
+        territorioSeleccionado = e.Value?.ToString() ?? "";
+        municipioSeleccionado = ""; // Reset municipio al cambiar territorio
+
+        if (string.IsNullOrEmpty(territorioSeleccionado))
+        {
+            listaMunicipiosFiltrados.Clear();
+        }
+        else
+        {
+            // Filtramos la lista completa para obtener municipios únicos de ese territorio
+            listaMunicipiosFiltrados = listaCompleta
+                .Where(c => c.DTERRC == territorioSeleccionado)
+                .Select(c => c.DMUNIC)
+                .Distinct()
+                .OrderBy(m => m)
+                .ToList();
+        }
+    }
+
+    private void EjecutarFiltro()
+    {
+        // Aplicamos el filtro usando los 3 valores
+        centrosFiltrados = listaCompleta
+            .Where(c => (string.IsNullOrEmpty(titularidadSeleccionada) || c.DTITUC == titularidadSeleccionada) &&
+                        (string.IsNullOrEmpty(territorioSeleccionado) || c.DTERRC == territorioSeleccionado) &&
+                        (string.IsNullOrEmpty(municipioSeleccionado) || c.DMUNIC == municipioSeleccionado))
+            .ToList();
+
+        paginaActual = 1;
+        StateHasChanged();
+    }
+
+    // ... Resto de métodos (CambiarPagina, IrADetalle) se mantienen igual ...
+    private void CambiarPagina(int nuevaPagina) { if (nuevaPagina >= 1 && nuevaPagina <= TotalPaginas) paginaActual = nuevaPagina; }
+    private void IrADetalle(Centro centro)
+    {
+        if (centro != null)
+        {
+            ViewModel.CentroSeleccionado = centro;
+            Nav.NavigateTo("/detalles");
+        }
+    }
+}

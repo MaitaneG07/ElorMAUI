@@ -1,0 +1,181 @@
+﻿@page "/detalles"
+<!--page "/detalles"-->
+@using ElorMAUI.Services
+@using ElorMAUI.ViewModels
+@inject WeatherService ClimaService
+@inject MainViewModel ViewModel
+@inject IJSRuntime JSRuntime
+
+<div class="container mt-3">
+    <h3 class="mb-4 text-primary text-center">📍 Detalles del Centro</h3>
+
+    @* Información del Centro *@
+    @if (ViewModel.CentroSeleccionado != null)
+    {
+        var centro = ViewModel.CentroSeleccionado;
+
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">@centro.NOM</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Municipio:</strong> @centro.DMUNIC</p>
+                        <p><strong>Territorio:</strong> @centro.DTERRC</p>
+                        <p><strong>Dirección:</strong> @centro.DOMI</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Teléfono:</strong> @centro.TEL1</p>
+                        <p><strong>Email:</strong> @centro.EMAIL</p>
+                        <p><strong>Titularidad:</strong> @centro.DTITUC</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    @* Clima *@
+    <div class="weather-container mb-4">
+        @if (datos == null)
+        {
+            <div class="text-center p-4">
+                <div class="spinner-border text-info" role="status"></div>
+                <p>Consultando clima...</p>
+            </div>
+        }
+        else
+        {
+            <div class="card weather-card border-0 shadow-lg rounded-4 overflow-hidden">
+                <div class="card-body bg-gradient-blue text-white p-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-uppercase fw-bold opacity-75">Temperatura Actual</h6>
+                            <h1 class="display-3 fw-bold mb-0">@datos.Current?.Temperature.ToString("F1")°C</h1>
+                        </div>
+                        <i class="bi bi-cloud-sun display-1"></i>
+                    </div>
+                </div>
+
+                <div class="card-footer bg-white p-3">
+                    <h6 class="text-muted fw-bold mb-3 text-center">Previsión próximos días</h6>
+                    @if (datos.Daily != null && datos.Daily.Days != null && datos.Daily.Days.Any())
+                    {
+                        int limite = Math.Min(5, datos.Daily.Days.Count - 1);
+                        <div class="d-flex justify-content-between text-center overflow-auto">
+                            @for (int i = 1; i <= limite; i++)
+                            {
+                                <div class="forecast-item px-2">
+                                    <small class="d-block text-muted text-capitalize">@FormatearFecha(datos.Daily.Days[i])</small>
+                                    <div class="fw-bold text-primary">@datos.Daily.MaxTemps[i].ToString("F1")°</div>
+                                    <div class="small text-secondary">@datos.Daily.MinTemps[i].ToString("F1")°</div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-center text-muted small">No hay datos de previsión disponibles.</p>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+
+    @* Mapa con Mapbox *@
+    <div class="card shadow-sm">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0">📍 Ubicación en el Mapa</h5>
+        </div>
+        <div class="card-body p-0">
+            <div id="map" style="width: 100%; height: 450px;"></div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .bg-gradient-blue {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+    }
+
+    .weather-card {
+        max-width: 100%;
+        margin: auto;
+    }
+
+    .forecast-item {
+        flex: 1;
+        min-width: 70px;
+        border-right: 1px solid #eee;
+    }
+
+        .forecast-item:last-child {
+            border-right: none;
+        }
+</style>
+
+@code {
+    [SupplyParameterFromQuery(Name = "lat")]
+    public double Lat { get; set; }
+
+    [SupplyParameterFromQuery(Name = "lon")]
+    public double Lon { get; set; }
+
+    private WeatherData? datos;
+    private string mapboxToken = "pk.eyJ1IjoiZWthYWFhYWEiLCJhIjoiY21rdms1dWoyMDZiYzNkc2U0ZzV4eDMzYiJ9.kByHBo_dejJvf7F0WkBIRw"; // Reemplaza con tu token real
+    private bool mapInitialized = false;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        try
+        {
+            datos = await ClimaService.GetWeatherAsync(Lat, Lon);
+        }
+        catch
+        {
+            datos = null;
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && Lat != 0 && Lon != 0 && !mapInitialized)
+        {
+            await Task.Delay(100);
+
+            try
+            {
+                // IMPORTANTE: Mapbox usa [longitud, latitud], NO [latitud, longitud]
+                // Primero va Lon, después Lat
+                await JSRuntime.InvokeVoidAsync("initMapbox", Lon, Lat, mapboxToken);
+                mapInitialized = true;
+
+                // Debug para verificar las coordenadas
+                Console.WriteLine($"Coordenadas enviadas a Mapbox - Lon: {Lon}, Lat: {Lat}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error inicializando mapa: {ex.Message}");
+                await Task.Delay(500);
+                try
+                {
+                    await JSRuntime.InvokeVoidAsync("initMapbox", Lon, Lat, mapboxToken);
+                    mapInitialized = true;
+                }
+                catch (Exception ex2)
+                {
+                    Console.WriteLine($"Error en segundo intento: {ex2.Message}");
+                }
+            }
+        }
+    }
+
+    private string FormatearFecha(string fechaRaw)
+    {
+        if (DateTime.TryParse(fechaRaw, out var date))
+        {
+            return date.ToString("ddd d", new System.Globalization.CultureInfo("es-ES"));
+        }
+        return fechaRaw;
+    }
+}

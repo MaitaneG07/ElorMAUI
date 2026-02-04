@@ -1,6 +1,18 @@
-﻿<Router AppAssembly="@typeof(MauiProgram).Assembly">
+﻿@using Microsoft.AspNetCore.Components.Routing
+@using ElorMAUI
+@using ElorMAUI.Models
+@using ElorMAUI.Components.Layout
+
+@* Corregido: Quitamos el punto extra después de ElorMAUI *@
+<Router AppAssembly="@typeof(ElorMAUI.App).Assembly">
     <Found Context="routeData">
-        <RouteView RouteData="@routeData" DefaultLayout="@typeof(Layout.MainLayout)" />
+        @* Corregido: El Layout debe ser MainLayout, NO NavMenu *@
+        <RouteView RouteData="@routeData" DefaultLayout="@typeof(ElorMAUI.Components.Layout.MainLayout)" />
         <FocusOnNavigate RouteData="@routeData" Selector="h1" />
     </Found>
+    <NotFound>
+        <LayoutView Layout="@typeof(ElorMAUI.Components.Layout.MainLayout)">
+            <p role="alert">Lo siento, no hay nada en esta dirección.</p>
+        </LayoutView>
+    </NotFound>
 </Router>

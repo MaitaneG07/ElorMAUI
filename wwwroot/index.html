@@ -8,23 +8,47 @@
     <link rel="stylesheet" href="css/bootstrap/bootstrap.min.css" />
     <link rel="stylesheet" href="css/app.css" />
     <link rel="stylesheet" href="ElorMAUI.styles.css" />
-    <link rel="icon" href="data:,">
-</head>
+    <!-- <link rel="icon" href="data:,">-->
+
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+        <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet">
+        <script src='https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.js'></script>
+    </head>
 
 <body>
 
     <div class="status-bar-safe-area"></div>
 
-    <div id="app">Loading...</div>
-
-    <div id="blazor-error-ui">
-        An unhandled error has occurred.
-        <a href="" class="reload">Reload</a>
-        <a class="dismiss">🗙</a>
+    <div id="app">
+        <div style="display:flex; justify-content:center; align-items:center; height:100vh; font-family:sans-serif;">
+            <p>Cargando Elorrieta App...</p>
+        </div>
     </div>
 
-    <script src="_framework/blazor.webview.js" autostart="false"></script>
+    <!-- <div id="app">Loading...</div> -->
 
+     <div id="blazor-error-ui">
+         An unhandled error has occurred.
+         <a href="" class="reload">Reload</a>
+         <a class="dismiss">🗙</a>
+     </div>
+
+     <script src="_framework/blazor.webview.js" autostart="false"></script>
+
+     <!-- <script>
+          function initMapbox(lon, lat, token) {
+              mapboxgl.accessToken = token;
+
+              const map = new mapboxgl.Map({
+                  container: 'map',
+                  style: 'mapbox://styles/mapbox/streets-v11',
+                  center: [lon, lat],
+                  zoom: 14
+              });
+
+              new mapboxgl.Marker().setLngLat([lon, lat]).addTo(map);
+          }
+      </script>-->
 </body>
 
 </html>
